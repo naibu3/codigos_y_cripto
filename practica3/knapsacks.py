@@ -1,5 +1,6 @@
 import math
 import random
+import time
 from sympy import mod_inverse
 
 def letter2ascii(letter):
@@ -216,7 +217,57 @@ def knapsackdeciphermh(super_knapsack, m, w, encrypted_text):
     # Convertir el binario en bloques de 8 bits y transformarlo en caracteres ASCII
     text = ''.join(ascii2letter(decrypted_binary[i:i+8]) for i in range(0, len(decrypted_binary), 8))
     return text
-from sympy import mod_inverse
+
+
+#TODO - DEBUG
+def shamir_zippel_attack(encrypted_text, max_range=100):
+    """
+    Implementa el ataque de criptoanálisis de Shamir y Zippel.
+    Explora en un rango de valores para encontrar una mochila supercreciente que permita descifrar `encrypted_text`.
+       
+    Args:
+        encrypted_text: El vector cifrado a analizar.
+        max_range: Rango máximo de valores a probar en la búsqueda de una mochila supercreciente.
+       
+    Return:
+        La mochila supercreciente encontrada, si existe. Mensaje informativo si no encuentra solución.
+    """
+    for range_start in range(1, max_range, 10):  # Probar en bloques de 10
+        range_end = min(range_start + 10, max_range)
+        print(f"Buscando en el rango {range_start} a {range_end}...")
+
+        # Iniciar el cronómetro para medir el tiempo en cada rango
+        start_time = time.time()
+        
+        # Generar una mochila supercreciente en el rango actual y probarla
+        for trial_value in range(range_start, range_end):
+            # Construir una posible mochila supercreciente
+            super_knapsack = [trial_value * i for i in range(1, len(encrypted_text) + 1)]
+            
+            # Intentar descifrar con la mochila generada
+            try:
+                decrypted_message = knapsackdeciphermh(super_knapsack, max(super_knapsack) + 1, trial_value, encrypted_text)
+                print(f"Solución encontrada con mochila supercreciente: {super_knapsack}")
+                print(f"Mensaje descifrado: {decrypted_message}")
+                return super_knapsack
+            except ValueError:
+                # Ignorar mochilas no válidas o fallos en descifrado
+                pass
+
+        # Medir el tiempo que tomó el análisis en el rango actual
+        elapsed_time = time.time() - start_time
+        print(f"Tiempo en rango {range_start}-{range_end}: {elapsed_time:.2f} segundos")
+
+        # Preguntar al usuario si desea continuar en el siguiente rango
+        continue_search = input("¿Desea continuar con el siguiente rango? (s/n): ").strip().lower()
+        if continue_search != 's':
+            print("Búsqueda de criptoanálisis finalizada.")
+            break
+
+    print("No se encontró una mochila supercreciente para descifrar el mensaje.")
+    return None
+
+
 
 if __name__ == "__main__":
     # Mochila supercreciente para pruebas
@@ -258,3 +309,11 @@ if __name__ == "__main__":
     # Descifrado con mochila trampa usando la clave privada
     decrypted_message = knapsackdeciphermh(private_key["super_knapsack"], private_key["m"], private_key["w"], trap_ciphered)
     print(f"Mensaje descifrado con mochila trampa: {decrypted_message}")
+
+    # Ejecutar el ataque de criptoanálisis - NO FUNCIONA
+    print("Iniciando criptoanálisis de Shamir y Zippel...")
+    super_knapsack_found = shamir_zippel_attack(trap_ciphered)
+    if super_knapsack_found:
+        print(f"Mochila supercreciente encontrada: {super_knapsack_found}")
+    else:
+        print("No se encontró una mochila supercreciente adecuada.")
