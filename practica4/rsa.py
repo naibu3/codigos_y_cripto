@@ -25,6 +25,8 @@ Para generar la propia documentación:
 
 Todo:
     * Terminar de comentar codigo correctamente.
+    * Añadir sugerencia de primos mediante tests.
+    * Mejorar la generacion de claves.
 """
 
 import random
