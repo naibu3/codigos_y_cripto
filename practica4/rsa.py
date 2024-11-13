@@ -1,12 +1,41 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""Practica 4 - RSA
+
+En esta práctica se implementan varias funciones relacionadas con el cifrado RSA,
+así como una pequeña interfaz de pruebas a modo de demostración.
+
+Example:
+
+    $ python rsa.py
+
+Paquetes necesarios para generar la documentación:
+
+    $pip install sphinx sphinxcontrib-napoleon
+    $sphinx-quickstart
+
+En `conf.py` añade:
+
+    $extensions = ['sphinx.ext.autodoc', 'sphinxcontrib.napoleon']
+
+Para generar la propia documentación:
+
+    $make html
+
+Todo:
+    * Terminar de comentar codigo correctamente.
+"""
+
 import random
 import time
 import sympy
 from math import gcd
 
-# Cálculo del símbolo de Jacobi - necesario para el test de Solovay-Strassen
+#========================================================================
+#   FUNCIONES AUXILIARES
+#========================================================================
+
 def jacobi(a, n):
     """
     Calcula el simbolo de Jacobi. Es necesario para el test de Solovay-Strassen.
@@ -33,7 +62,11 @@ def jacobi(a, n):
         a %= n
     return result if n == 1 else 0
 
-# primosolostra
+
+#========================================================================
+#   BÚSQUEDA DE PRIMOS - GENERACIÓN DE CLAVES
+#========================================================================
+
 # Tests de Solovay-Strassen
 def primosolostra(n, a, b, k):
     """
@@ -73,11 +106,10 @@ def primosolostra(n, a, b, k):
     print(f"[!] Tiempo en completar el test: {end_time - start_time}")
     return True
 
-# primoMillerRabin 
 # Busqueda de primos mediante los Tests de Miller-Rabin
 def primoMillerRabin(n, a, b, k):
     """
-    Busca primos mediante los Tests de Miller-Rabin
+    Busca primos mediante los Tests de Miller-Rabin. Utiliza `miller_rabin_test` para realizar el test.
 
     Args:
         n: Nuemro a comprobar.
@@ -216,6 +248,10 @@ def keygeneration(p=None, q=None, e_option=None):
 
     return public_key, private_key
 
+#========================================================================
+#   CIFRADO
+#========================================================================
+
 # Convierte un string en una cadena numerica (a->01, b->02...)
 def letters2num(a):
     """
@@ -236,30 +272,6 @@ def letters2num(a):
             result.append(f"{num:02}")
     return ''.join(result)
 
-# Convierte una cadena numerica (a->01, b->02...) en un string legible
-def nums2letter(a):
-    """
-    Convierte una cadena numerica en un string.
-
-    Args:
-        a: Cadena numérica a convertir.
-
-    Returns:
-        Devuelve un string legible.
-    """
-
-    result = []
-    # Procesa la cadena en bloques de 2 caracteres
-    for i in range(0, len(a), 2):
-        num = int(a[i:i+2])  # Convierte el bloque a un número
-        # Convierte el número a letra (0 -> 'a', 1 -> 'b', etc.)
-        if 1 <= num <= 26:
-            result.append(chr(num - 1 + ord('a')))
-    return ''.join(result)
-
-
-# Toma una cadena numerica (un texto transformado a su equivalente numerico) y lo divide en bloques
-# de tamaño fijado por n. El programa debera incluir 30s o 0 para rellenar los bloques incompletos.
 def preparenumcipher(text, n):
     """
     Toma una cadena numerica (un texto transformado a su equivalente numérico) y lo divide en bloques de tamaño fijado por n.
@@ -284,30 +296,9 @@ def preparenumcipher(text, n):
         padding = '30' * (remaining_length // 2) + '0' * (remaining_length % 2)
         blocks[-1] += padding[:remaining_length] #Añade el padding generado al ultimo bloque
     
+    blocks = [int(block) for block in blocks]
+
     return blocks
-
-# Toma un vector numerico, y devuelva una cadena numerica lista para ser traducida a texto.
-def preparetextdecipher(nums):
-    """
-    Toma un vector numerico, y devuelva una cadena numérica lista para ser traducida a texto.
-
-    Args:
-        nums: Cadena a traducir.
-
-    Returns:
-        Devuelve un texto.
-    """
-    # Une todos los bloques en una sola cadena
-    text = ''.join(str(num) for num in nums)
-    
-    # Elimina los posibles caracteres de relleno (0 y 30 al final)
-    while text.endswith("30") or text.endswith("0"):
-        if text.endswith("30"):
-            text = text[:-2]
-        elif text.endswith("0"):
-            text = text[:-1]
-    
-    return text
 
 def rsacipher(block, public_key):
     """
@@ -320,26 +311,10 @@ def rsacipher(block, public_key):
     Returns:
         Devuelve el bloque cifrado.
     """
-    n, e = public_key
+    e, n = public_key
     # Cifra el bloque: c = (block^e) mod n
     cipher_block = pow(block, e, n)
     return cipher_block
-
-def rsadecipher(cipher_block, private_key):
-    """
-    Descifra un bloque utilizando RSA.
-
-    Args:
-        cipher_block: Bloque cifrado.
-        private_key: Lista de dos elementos con la clave privada (n,d)
-
-    Returns:
-        Devuelve el bloque descifrado.
-    """
-    n, d = private_key
-    # Descifra el bloque: m = (cipher_block^d) mod n
-    deciphered_block = pow(cipher_block, d, n)
-    return deciphered_block
 
 # Cifra un texto con una clave publica con un tamaño de bloque dado
 def rsaciphertext(text, public_key, block_size):
@@ -364,6 +339,80 @@ def rsaciphertext(text, public_key, block_size):
     
     return cipher_blocks
 
+#========================================================================
+#   DESCIFRADO
+#========================================================================
+
+# Convierte una cadena numerica (a->01, b->02...) en un string legible
+def nums2letter(a):
+    """
+    Convierte una cadena numerica en un string.
+
+    Args:
+        a: Cadena numérica a convertir.
+
+    Returns:
+        Devuelve un string legible.
+    """
+
+    result = []
+    # Procesa la cadena en bloques de 2 caracteres
+    for i in range(0, len(a), 2):
+        num = int(a[i:i+2])  # Convierte el bloque a un número
+        # Convierte el número a letra (0 -> 'a', 1 -> 'b', etc.)
+        if 1 <= num <= 26:
+            result.append(chr(num - 1 + ord('a')))
+    return ''.join(result)
+
+# Toma un vector numerico, y devuelva una cadena numerica lista para ser traducida a texto.
+def preparetextdecipher(nums, n):
+    """
+    Toma un vector numerico con bloques de tamaño n, y devuelva una cadena numérica lista para ser traducida a texto.
+
+    Args:
+        nums: Cadena a traducir.
+        n: Tamaño de bloque.
+
+    Returns:
+        Devuelve un texto.
+    """
+    
+    text=""
+    #Pone 0s delante si es necesario
+    for block in nums:
+        block=str(block)
+        if len(block) < n:
+            remaining_length = n - len(block)
+            padding = '00' * (remaining_length // 2) + '0' * (remaining_length % 2)
+            block = padding + block #Añade el padding generado al ultimo bloque
+        text+=block
+    
+    # Elimina los posibles caracteres de relleno (0 y 30 al final)
+    while text.endswith("0"):
+        if text.endswith("30"):
+            text = text[:-2]
+        elif text.endswith("300"):
+            text = text[:-3]
+
+    return text
+
+def rsadecipher(cipher_block, private_key):
+    """
+    Descifra un bloque utilizando RSA.
+
+    Args:
+        cipher_block: Bloque cifrado.
+        private_key: Lista de dos elementos con la clave privada (n,d)
+
+    Returns:
+        Devuelve el bloque descifrado.
+    """
+    d, n = private_key
+    # Descifra el bloque: m = (cipher_block^d) mod n
+    print(f"Bloque a descifrar: {cipher_block}")
+    deciphered_block = pow(cipher_block, d, n)
+    return deciphered_block
+
 # Descifra una serie de bloques con una clave privada y un tamaño de bloque dado 
 def rsadeciphertext(cipher_blocks, private_key, block_size):
     """
@@ -377,15 +426,24 @@ def rsadeciphertext(cipher_blocks, private_key, block_size):
     Returns:
         Devuelve el texto descifrado.
     """
-    # Descifra cada bloque con la clave privada
-    decrypted_blocks = [rsadecipher(cipher_block, private_key) for cipher_block in cipher_blocks]
+    decrypted_blocks = []
+    for cipher_block in cipher_blocks:
+        decrypted_block = rsadecipher(cipher_block, private_key)
+        decrypted_blocks.append(decrypted_block)
+        print(f"[DEBUG] Bloque cifrado: {cipher_block}, Bloque descifrado: {decrypted_block}")
+    
+    # Convertir los bloques en una cadena numérica lista para su decodificación
+    text = preparetextdecipher(decrypted_blocks, block_size)
+    print(f"[DEBUG] Texto decodificado (sin padding): {text}")
 
-    print(f"[DEBUG] Bloques descifrados RAW {decrypted_blocks}.") # DEBUG
-    
-    # Convierte los bloques de vuelta a texto
-    decrypted_text = preparetextdecipher(decrypted_blocks)
-    
-    return nums2letter(decrypted_text)
+    # Convertir el texto numérico en letras
+    plaintext = nums2letter(text)
+    print(f"[DEBUG] Texto final decodificado: {plaintext}")
+    return plaintext
+
+#========================================================================
+#   INTERFAZ
+#========================================================================
 
 # Función para mostrar el menú
 def menu():
@@ -451,5 +509,10 @@ def main():
         else:
             print("[!] Opción no válida. Por favor, elige una opción válida (1-4).")
 
+#========================================================================
+#   EJECUCIÓN PRINCIPAL
+#========================================================================
+
 if __name__ == "__main__":
     main()
+    
