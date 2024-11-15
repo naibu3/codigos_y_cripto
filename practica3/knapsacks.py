@@ -232,7 +232,7 @@ def shamir_zippel_attack(encrypted_text, max_range=100):
     Return:
         La mochila supercreciente encontrada, si existe. Mensaje informativo si no encuentra solución.
     """
-    for range_start in range(1, max_range, 10):  # Probar en bloques de 10
+    for range_start in range(11, max_range, 20):  # Probar en bloques de 10
         range_end = min(range_start + 10, max_range)
         print(f"Buscando en el rango {range_start} a {range_end}...")
 
