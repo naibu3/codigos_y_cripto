@@ -25,10 +25,10 @@ Para generar la propia documentación:
 
 Todo:
     * Terminar de comentar codigo correctamente.
-    * Implementar cifrado/descifrado.
     * Criptoanálisis.
 """
 
+import random
 import argparse
 import numpy as np
 
@@ -86,6 +86,18 @@ def eulerfun(n):
 
     return invertibles
 
+# Genera un valor k que sea coprimo con 26
+def generar_k():
+    invertibles = eulerfun(26)
+    return random.choice(invertibles)
+
+# Genera un valor d que sea coprimo con 26
+def generar_d():
+    while True:
+        d = random.randint(0, 25)
+        if algeucl(d, 26) == 1:  # d es coprimo con 26
+            return d
+
 # Devuelve la dimension si es cuadrada ó 0 si no lo es
 def cuadrada(matriz):   
     if matriz is None or matriz.size == 0:  # Comprobar si la matriz no está vacía
@@ -114,6 +126,15 @@ def matriz_menor(matriz, i, j):
     return menor
 
 def matriz_adjunta(matriz):
+    """
+    Busca la adjunta de una matriz.
+
+    Args:
+        matriz: Matriz a buscar la adjunta. Debe ser en formato numpy.
+
+    Return:
+        Devuelve la matriz adjunta.
+    """
     n = matriz.shape[0]  # Tamaño de la matriz
     adjunta = np.zeros((n, n))
 
@@ -127,6 +148,16 @@ def matriz_adjunta(matriz):
     return adjunta
 
 def InvModMatrix(matriz, n):
+    """
+    Calcula la inversa modular de una matriz.
+
+    Args:
+        matriz: Matriz a la que buscar inversa. Debe estar en formato numpy.
+        n: Módulo.
+
+    Return:
+        Devuelve la inversa de la matriz.
+    """
 
     if matriz is None or matriz.size == 0:
         print(f"[ERROR] La matriz no está definida")
@@ -191,8 +222,8 @@ def NumberstoText(a):
     # Procesa la cadena en bloques de 2 caracteres
     for i in range(0, len(a), 2):
         
-        if text[i:i+2] == '##': num = 30
-        else: num = int(text[i:i+2])  # Convierte el bloque a un número
+        if a[i:i+2] == '##': num = 30
+        else: num = int(a[i:i+2])  # Convierte el bloque a un número
 
         # Convierte el número a letra (00 -> 'a', 01 -> 'b', etc.)
         if 0 <= num <= 26:
@@ -262,29 +293,42 @@ def Afindecypher(text, k, d):
 
     return deciphered
 
+def main():
+    """
+    Lógica del menú.
+    """
+
+    while True:
+        print("\n--- Menú ---")
+        print("1. Ingresar k y d")
+        print("2. Generar k y d aleatorios")
+        print("3. Cifrar mensaje")
+        print("4. Descifrar mensaje")
+        print("5. Salir")
+
+        opcion = input("Elige una opción: ")
+
+        if opcion == "1":
+            k = int(input("Introduce el valor de k (0 <= k < 26) y asegúrate de que tiene inverso: "))
+            d = int(input("Introduce el valor de d (0 <= d < 26) y asegúrate de que es coprimo con 26: "))
+        elif opcion == "2":
+            k = generar_k()
+            d = generar_d()
+            print(f"Valores generados: k = {k}, d = {d}")
+        elif opcion == "3":
+            mensaje = input("Introduce el mensaje a cifrar: ")
+            cifrado = Afincypher(mensaje, k, d)
+            print(f"Mensaje cifrado: {cifrado}")
+        elif opcion == "4":
+            mensaje_cifrado = input("Introduce el mensaje cifrado a descifrar: ")
+            descifrado = Afindecypher(mensaje_cifrado, k, d)
+            print(f"Mensaje descifrado: {NumberstoText(descifrado)}")
+        elif opcion == "5":
+            print("Saliendo del programa.")
+            break
+        else:
+            print("Opción no válida. Inténtalo de nuevo.")
+
 if __name__ == "__main__":
 
-    #matiz = [
-    #    [3, 1],
-    #    [2, 3]]
-
-    #matiz_np = np.array(matiz)
-
-    #print(algeucl(3,4))
-    #print(determinante_modular(matiz, 4))
-    #print(InvModMatrix(matiz_np, 4))
-
-    ## Pruebas cifrado afin
-    text="Hola a todos"
-    k=3
-    d=7
-    print(f"Cifrando -> {text}, k={k}, d={d}")
-    print(f"{TexttoNumber(text)}")
-    ciphered=Afincypher(text, k, d)
-    print(f"{ciphered}")
-
-    ## Pruebas descifrado afin
-    print(f"Descifrando, k={k}, d={d}")
-    print(f"{ciphered}")
-    text=Afindecypher(ciphered, k, d)
-    print(f"{NumberstoText(text)}")
+    main()
