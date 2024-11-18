@@ -1,7 +1,42 @@
+#!/bin/python3
+# -*- coding: utf-8 -*-
+
+"""Practica 3 - Mochilas
+
+En esta práctica se implementan varias funciones relacionadas con el cifrado mediante mochilas,
+así como una pequeña interfaz de pruebas a modo de demostración.
+
+Example:
+
+    $ python knapsacks.py.py
+
+Paquetes necesarios para generar la documentación:
+
+    $pip install sphinx sphinxcontrib-napoleon
+    $sphinx-quickstart
+
+En `conf.py` añade:
+
+    $extensions = ['sphinx.ext.autodoc', 'sphinxcontrib.napoleon']
+
+Para generar la propia documentación:
+
+    $make html
+
+Todo:
+    * Terminar de comentar codigo correctamente.
+    * Implementar menu.
+    * Implementar criptoanalisis.
+"""
+
 import math
 import random
 import time
-from sympy import mod_inverse
+from sympy import mod_inverse, gcd
+
+#========================================================================
+#   FUNCIONES AUXILIARES
+#========================================================================
 
 def letter2ascii(letter):
     """
@@ -27,8 +62,7 @@ def ascii2letter(binary_str):
     """
     return chr(int(binary_str, 2))
 
-#Toma un vector fila y determine si es una mochila supercreciente (devolviendo 1),
-# una mochila no supercreciente (devolviendo 0) o no es una mochila (devolviendo -1)
+# Determina si es una mochila supercreciente
 def knapsack(s):
     """
     Determina si una mochila es supercreciente.
@@ -52,8 +86,7 @@ def knapsack(s):
         suma += elem
     return 1
 
-# Toma una mochila (supercreciente o no) s, un valor v, y determine usando el algoritmo de
-# mochilas supercrecientes si v es valor objetivo de s
+# Determine si v es valor objetivo de una mochila
 def knapsacksol(s, v):
     """
     Determina si el valor v puede ser alcanzado por una combinación de elementos de la mochila (supercreciente o no) s.
@@ -71,6 +104,27 @@ def knapsacksol(s, v):
         else:
             result.append(0)
     return list(reversed(result)) if v == 0 else None
+
+# Comprueba si un valor tiene factores primos en comun con algún elemento de una mochila
+def commonfactors(w, s):
+    """
+    Comprueba si `w` tiene factores primos comunes con alguno de los elementos de `s`.
+
+    Args:
+        w: Valor.
+        s: Mochila.
+    
+    Return:
+        True si no tiene factores comunes con ninguno, False si los hay.
+    """
+    for value in s:
+        if math.gcd(w, value) != 1:
+            return False
+    return True
+
+#========================================================================
+#   CIFRADO/DESCIFRADO CON MOCHILAS NORMALES
+#========================================================================
 
 def knapsackcipher(text, knapsack):
     """
@@ -123,21 +177,9 @@ def knapsackdecipher(encrypted_text, s):
     text = ''.join(ascii2letter(decrypted_binary[i:i+8]) for i in range(0, len(decrypted_binary), 8))
     return text
 
-def commonfactors(w, s):
-    """
-    Comprueba si `w` tiene factores primos comunes con alguno de los elementos de `s`.
-
-    Args:
-        w: Valor.
-        s: Mochila.
-    
-    Return:
-        True si no tiene factores comunes con ninguno, False si los hay.
-    """
-    for value in s:
-        if math.gcd(w, value) != 1:
-            return False
-    return True
+#========================================================================
+#   CIFRADO/DESCIFRADO CON MOCHILAS TRAMPA
+#========================================================================
 
 def knapsackpublicandprivate(super_knapsack, m=None, w=None):
     """
@@ -218,47 +260,67 @@ def knapsackdeciphermh(super_knapsack, m, w, encrypted_text):
     text = ''.join(ascii2letter(decrypted_binary[i:i+8]) for i in range(0, len(decrypted_binary), 8))
     return text
 
+#========================================================================
+#   CRIPTOANÁLISIS DE SHAMIR Y ZIPPEL
+#========================================================================
 
-#TODO - DEBUG
-def shamir_zippel_attack(encrypted_text, max_range=100):
+def shamir_zippel_attack(public_knapsack, m, max_range=100):
     """
-    Implementa el ataque de criptoanálisis de Shamir y Zippel.
-    Explora en un rango de valores para encontrar una mochila supercreciente que permita descifrar `encrypted_text`.
-       
+    Ataque de Shamir y Zippel para recuperar una mochila supercreciente a partir de una mochila con trampa.
+
     Args:
-        encrypted_text: El vector cifrado a analizar.
-        max_range: Rango máximo de valores a probar en la búsqueda de una mochila supercreciente.
-       
-    Return:
-        La mochila supercreciente encontrada, si existe. Mensaje informativo si no encuentra solución.
+        public_knapsack: Mochila pública.
+        m: Módulo utilizado para construir la mochila pública.
+        max_range: Rango máximo para probar valores de múltiplos modulares.
+
+    Returns:
+        Mochila supercreciente recuperada o None si no se encuentra.
     """
+    n = len(public_knapsack)
+
     for range_start in range(1, max_range, 10):  # Probar en bloques de 10
         range_end = min(range_start + 10, max_range)
-        print(f"Buscando en el rango {range_start} a {range_end}...")
-
-        # Iniciar el cronómetro para medir el tiempo en cada rango
-        start_time = time.time()
+        print(f"\nBuscando en el rango {range_start} a {range_end}...")
         
-        # Generar una mochila supercreciente en el rango actual y probarla
-        for trial_value in range(range_start, range_end):
-            # Construir una posible mochila supercreciente
-            super_knapsack = [trial_value * i for i in range(1, len(encrypted_text) + 1)]
-            
-            # Intentar descifrar con la mochila generada
-            try:
-                decrypted_message = knapsackdeciphermh(super_knapsack, max(super_knapsack) + 1, trial_value, encrypted_text)
-                print(f"Solución encontrada con mochila supercreciente: {super_knapsack}")
-                print(f"Mensaje descifrado: {decrypted_message}")
-                return super_knapsack
-            except ValueError:
-                # Ignorar mochilas no válidas o fallos en descifrado
-                pass
+        # Iniciar el cronómetro para medir el tiempo en este rango
+        start_time = time.time()
 
-        # Medir el tiempo que tomó el análisis en el rango actual
+        for i in range(n - 1):  # Probar pares consecutivos S1, S2
+            S1, S2 = public_knapsack[i], public_knapsack[i + 1]
+            if gcd(S2, m) != 1:
+                continue  # Ignorar si no cumplen mcd(S2, m) = 1
+
+            # Paso 1: Calcular q
+            q = (S1 * mod_inverse(S2, m)) % m
+
+            # Paso 2: Generar múltiplos modulares de q
+            multiples = [(k * q) % m for k in range(range_start, range_end + 1)]
+            multiples = sorted(set(multiples))  # Evitar duplicados y ordenar
+
+            # Paso 3-6: Iterar sobre posibles valores de S1'
+            for candidate in multiples:
+                if gcd(candidate, m) != 1:
+                    continue  # Ignorar si mcd(S1', m) ≠ 1
+
+                # Paso 4: Calcular w
+                w = (S1 * mod_inverse(candidate, m)) % m
+
+                # Paso 5: Construir mochila supercreciente
+                w_inv = mod_inverse(w, m)
+                super_knapsack = [(si * w_inv) % m for si in public_knapsack]
+
+                # Verificar si es supercreciente
+                if knapsack(super_knapsack) == 1:
+                    elapsed_time = time.time() - start_time
+                    print(f"Tiempo en rango {range_start}-{range_end}: {elapsed_time:.2f} segundos")
+                    print(f"Mochila supercreciente encontrada: {super_knapsack}")
+                    return super_knapsack
+
+        # Medir el tiempo que tomó analizar el rango actual
         elapsed_time = time.time() - start_time
         print(f"Tiempo en rango {range_start}-{range_end}: {elapsed_time:.2f} segundos")
 
-        # Preguntar al usuario si desea continuar en el siguiente rango
+        # Preguntar al usuario si desea continuar con el siguiente rango
         continue_search = input("¿Desea continuar con el siguiente rango? (s/n): ").strip().lower()
         if continue_search != 's':
             print("Búsqueda de criptoanálisis finalizada.")
@@ -267,53 +329,255 @@ def shamir_zippel_attack(encrypted_text, max_range=100):
     print("No se encontró una mochila supercreciente para descifrar el mensaje.")
     return None
 
+#========================================================================
+#   MENU
+#========================================================================
 
+def main_menu():
+    """
+    Menú principal para interactuar con las funciones de cifrado, descifrado y criptoanálisis.
+    """
+    while True:
+        print("\n==== Menú Principal ====")
+        print("[1] Cifrar un mensaje")
+        print("[2] Descifrar un mensaje")
+        print("[3] Generar una mochila publica y privada")
+        print("[4] Realizar criptoanálisis (Shamir y Zippel)")
+        print("[5] Salir")
+        
+        choice = input("[*] Elige una opción (1/2/3/4): ").strip()
+        
+        if choice == "1":
+            cipher_message()
+        elif choice == "2":
+            decipher_message()
+        elif choice == "3":
+            generate_public_private_key()
+        elif choice == "4":
+            perform_cryptoanalysis()
+        elif choice == "5":
+            print("[+] ¡Hasta luego!")
+            break
+        else:
+            print("[!] Opción no válida. Intenta de nuevo.")
+
+def parse_knapsack_input(input_str):
+    """
+    Procesa la entrada del usuario para convertirla en una lista de enteros.
+    
+    Args:
+        input_str: Cadena de entrada del usuario que representa una lista en formato Python.
+    
+    Returns:
+        Una lista de enteros si la entrada es válida.
+    """
+    try:
+        # Quitar corchetes y dividir por comas
+        input_str = input_str.strip().strip('[]')
+        knapsack = [int(x.strip()) for x in input_str.split(',')]
+        return knapsack
+    except ValueError:
+        raise ValueError("[!] Entrada inválida. Asegúrate de usar el formato [1, 2, 3, ...] con números enteros.")
+
+def cipher_message():
+    """
+    Opción del menu que permite cifrar un mensaje utilizando una mochila.
+    """
+    print("\n==== Cifrar un mensaje ====")
+    message = input("[*] Introduce el mensaje a cifrar: ").strip()
+    
+    # Opción para elegir mochila
+    choice = input("[*] ¿Deseas usar una mochila específica o generar una aleatoria? (elegir/generar): ").strip().lower()
+    if choice == "elegir":
+        knapsack = input("[*] Introduce la mochila  (ejemplo: [2, 3, 7, 14]): ").strip()
+        knapsack = parse_knapsack_input(knapsack)
+    else:
+        knapsack = generate_random_knapsack()
+        print(f"[+] Se generó una mochila aleatoria: {knapsack}")
+    
+    # Cifrar el mensaje
+    encrypted = knapsackcipher(message, knapsack)
+    print(f"[+] Mensaje cifrado: {encrypted}")
+
+def decipher_message(): #TODO - Permitir descifrar con mochila trampa
+    """
+    Permite descifrar un mensaje cifrado utilizando una mochila supercreciente.
+    """
+    print("\n==== Descifrar un mensaje ====")
+    encrypted_message = input("[*] Introduce el mensaje cifrado (ejemplo: [82, 123, 39]): ").strip()
+    encrypted_message = parse_knapsack_input(encrypted_message)
+    
+    knapsack = input("[*] Introduce la mochila (ejemplo: [2, 3, 7, 14]): ").strip()
+    knapsack = parse_knapsack_input(knapsack)
+    
+    try:
+        decrypted = knapsackdecipher(encrypted_message, knapsack)
+        print(f"[+] Mensaje descifrado: {decrypted}")
+    except ValueError as e:
+        print(f"[!] Error al descifrar: {e}")
+
+def perform_cryptoanalysis():
+    """
+    Permite realizar el ataque de criptoanálisis de Shamir y Zippel.
+    """
+    print("\n==== Criptoanálisis (Shamir y Zippel) ====")
+
+    # Opción para elegir mochila
+    choice = input("[*] ¿Deseas realizar un criptoanálisis de ejemplo o indicar una mochila? (default/custom): ").strip().lower()
+    if choice == "default":
+        public_knapsack = [35, 137, 41, 149, 65, 197]
+        m=300
+        w=67
+        print(f"\n\n[+] Probando para la mochila {public_knapsack}, (m={m}, w={w})")
+    else:
+        public_knapsack = input("[*] Introduce la mochila pública separada por comas (ejemplo: 82,123,39): ").strip()
+        public_knapsack = [int(x) for x in public_knapsack.split(",")]
+    
+        m = int(input("[*] Introduce el valor del módulo m: ").strip())
+        #max_range = int(input("Introduce el rango máximo para el ataque: ").strip())
+    
+    recovered_knapsack = shamir_zippel_attack(public_knapsack, m)
+
+    if recovered_knapsack:
+        print(f"[+] Mochila supercreciente recuperada: {recovered_knapsack}")
+    else:
+        print("[!]No se pudo recuperar una mochila supercreciente.")
+
+def generate_random_knapsack(size=7, start=2, step=2):
+    """
+    Genera una mochila aleatoria para el cifrado.
+
+    Args:
+        size: Tamaño de la mochila.
+        start: Valor inicial.
+        step: Incremento mínimo para garantizar supercrecimiento.
+
+    Return:
+        Devuelve la mochila generada.
+    """
+    knapsack = [start]
+    for _ in range(1, size):
+        knapsack.append(knapsack[-1] + random.randint(step, step * 2))
+    return knapsack
+
+def generate_public_private_key():
+    """
+    Genera una clave pública y privada a partir de una mochila supercreciente ingresada.
+    """
+    print("\n==== Generar Clave Pública y Privada ====")
+    super_knapsack = generate_random_knapsack()
+
+    try:
+
+        # Pedir valores de m y w o generarlos automáticamente
+        m = input("[*] Introduce un valor para m (debe ser mayor que la suma de la mochila) o presiona Enter para generarlo automáticamente: ").strip()
+        if m:
+            m = int(m)
+        else:
+            m = sum(super_knapsack) + random.randint(1, 100)
+
+        w = input("[*] Introduce un valor para w (coprimo con m y los elementos de la mochila) o presiona Enter para generarlo automáticamente: ").strip()
+        if w:
+            w = int(w)
+            if gcd(w, m) != 1 or not commonfactors(w, super_knapsack):
+                raise ValueError("[!] El valor de w no es adecuado. Debe ser coprimo con m y los elementos de la mochila.")
+        else:
+            # Generar automáticamente w
+            w = random.randint(2, m - 1)
+            while gcd(w, m) != 1 or not commonfactors(w, super_knapsack):
+                w = random.randint(2, m - 1)
+
+        # Generar las claves
+        keys = knapsackpublicandprivate(super_knapsack, m, w)
+        print(f"[+] Clave pública (mochila trampa): {keys['public_key']}")
+        print(f"[+] Clave privada: (m = {keys['private_key']['m']}, w = {keys['private_key']['w']})")
+        print(f"[+] Mochila supercreciente original (clave privada): {keys['private_key']['super_knapsack']}")
+    except ValueError as e:
+        print(e)
+    except Exception as e:
+        print(f"[!] Error al generar las claves: {e}")
+
+#========================================================================
+#   FLUJO DE EJECUCIÓN PRINCIPAL
+#========================================================================
 
 if __name__ == "__main__":
-    # Mochila supercreciente para pruebas
-    mochila = (1, 2, 5, 10)
+    
+    main_menu()
 
-    # Prueba de la función knapsack
-    if knapsack(mochila):
-        print(f"{mochila} es supercreciente")
+    ## DEBUG CODE
 
-    # Prueba de la función knapsacksol
-    if knapsacksol(mochila, 7):
-        print(f"{7} es valor de la mochila")
-    if knapsacksol(mochila, 9):
-        print(f"{9} es valor de la mochila")
+    # # Mochila supercreciente para pruebas
+    # mochila = (1, 2, 5, 10)
 
-    # Prueba de cifrado y descifrado con la función knapsackcipher y knapsackdecipher
-    message = "Hola A TODOS"
-    ciphered = knapsackcipher(message, mochila)
-    print(f"Mensaje cifrado: {ciphered}")
-    print(f"Mensaje descifrado: {knapsackdecipher(ciphered, mochila)}")
+    # # Prueba de la función knapsack
+    # if knapsack(mochila):
+    #     print(f"{mochila} es supercreciente")
 
-    # Parámetros para generar la mochila trampa
-    m = 20  # Un número mayor que la suma de los elementos de la mochila
-    w = 3   # Un número coprimo con m y con todos los elementos de la mochila
+    # # Prueba de la función knapsacksol
+    # if knapsacksol(mochila, 7):
+    #     print(f"{7} es valor de la mochila")
+    # if knapsacksol(mochila, 9):
+    #     print(f"{9} es valor de la mochila")
 
-    # Generar la clave pública y privada
-    keys = knapsackpublicandprivate(mochila, m, w)
-    public_key = keys["public_key"]
-    private_key = keys["private_key"]
+    # # Prueba de cifrado y descifrado con la función knapsackcipher y knapsackdecipher
+    # message = "Hola A TODOS"
+    # ciphered = knapsackcipher(message, mochila)
+    # print(f"Mensaje cifrado: {ciphered}")
+    # print(f"Mensaje descifrado: {knapsackdecipher(ciphered, mochila)}")
 
-    print(f"Clave pública: {public_key}")
-    print(f"Clave privada (m, w): ({private_key['m']}, {private_key['w']})")
+    # # Parámetros para generar la mochila trampa
+    # m = 20  # Un número mayor que la suma de los elementos de la mochila
+    # w = 3   # Un número coprimo con m y con todos los elementos de la mochila
 
-    # Cifrado con la mochila trampa (clave pública)
-    trap_message = "TEST"
-    trap_ciphered = knapsackcipher(trap_message, public_key)
-    print(f"Mensaje cifrado con mochila trampa: {trap_ciphered}")
+    # # Generar la clave pública y privada
+    # keys = knapsackpublicandprivate(mochila, m, w)
+    # public_key = keys["public_key"]
+    # private_key = keys["private_key"]
 
-    # Descifrado con mochila trampa usando la clave privada
-    decrypted_message = knapsackdeciphermh(private_key["super_knapsack"], private_key["m"], private_key["w"], trap_ciphered)
-    print(f"Mensaje descifrado con mochila trampa: {decrypted_message}")
+    # print(f"Clave pública: {public_key}")
+    # print(f"Clave privada (m, w): ({private_key['m']}, {private_key['w']})")
 
-    # Ejecutar el ataque de criptoanálisis - NO FUNCIONA
-    print("Iniciando criptoanálisis de Shamir y Zippel...")
-    super_knapsack_found = shamir_zippel_attack(trap_ciphered)
-    if super_knapsack_found:
-        print(f"Mochila supercreciente encontrada: {super_knapsack_found}")
-    else:
-        print("No se encontró una mochila supercreciente adecuada.")
+    # # Cifrado con la mochila trampa (clave pública)
+    # trap_message = "TEST"
+    # trap_ciphered = knapsackcipher(trap_message, public_key)
+    # print(f"Mensaje cifrado con mochila trampa: {trap_ciphered}")
+
+    # # Descifrado con mochila trampa usando la clave privada
+    # decrypted_message = knapsackdeciphermh(private_key["super_knapsack"], private_key["m"], private_key["w"], trap_ciphered)
+    # print(f"Mensaje descifrado con mochila trampa: {decrypted_message}")
+
+    # #===================================================================
+    # #   CRIPTOANALISIS
+    # #===================================================================
+
+    # print("\n\n[+] Probando método de criptoanálisis de Shamir y Zippel.")
+
+    # # PRUEBA 1__________________________________________________________
+    # public_knapsack = [82, 123, 39, 78, 238, 105, 208]
+    # m=248
+    # w=41
+    # print(f"\n\n[+] Probando para la mochila {public_knapsack}, (m={m}, w={w})")
+
+    # # Ataque de Shamir y Zippel
+    # recovered_knapsack = shamir_zippel_attack(public_knapsack, m)
+
+    # # Verificar si coincide con la mochila privada original
+    # if recovered_knapsack == None:
+    #     print("[!] No se ha podido recuperar la mochila.")
+    # else:
+    #     print(f"[*] La mochila es {recovered_knapsack}")
+
+    # # PRUEBA 2__________________________________________________________
+    # public_knapsack = [35, 137, 41, 149, 65, 197]
+    # m=300
+    # w=67
+    # print(f"\n\n[+] Probando para la mochila {public_knapsack}, (m={m}, w={w})")
+
+    # # Ataque de Shamir y Zippel
+    # recovered_knapsack = shamir_zippel_attack(public_knapsack, m)
+
+    # if recovered_knapsack == None:
+    #     print("[!] No se ha podido recuperar la mochila.")
+    # else:
+    #     print(f"[*] La mochila es {recovered_knapsack}")
