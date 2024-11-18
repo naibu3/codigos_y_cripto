@@ -361,7 +361,7 @@ def nums2letter(a):
     # Procesa la cadena en bloques de 2 caracteres
     for i in range(0, len(a), 2):
         num = int(a[i:i+2])  # Convierte el bloque a un número
-        # Convierte el número a letra (0 -> 'a', 1 -> 'b', etc.)
+        # Convierte el número a letra (01 -> 'a', 02 -> 'b', etc.)
         if 1 <= num <= 26:
             result.append(chr(num - 1 + ord('a')))
     return ''.join(result)
