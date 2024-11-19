@@ -8,7 +8,7 @@ así como una pequeña interfaz de pruebas a modo de demostración.
 
 Example:
 
-    $ python knapsacks.py.py
+    $ python knapsacks.py
 
 Paquetes necesarios para generar la documentación:
 
@@ -19,14 +19,14 @@ En `conf.py` añade:
 
     $extensions = ['sphinx.ext.autodoc', 'sphinxcontrib.napoleon']
 
+Y ejecuta la siguiente línea en el directorio donde se encuentre `conf.py`:
+
+    sphinx-apidoc -o . ../
+
 Para generar la propia documentación:
 
     $make html
 
-Todo:
-    * Terminar de comentar codigo correctamente.
-    * Implementar menu.
-    * Implementar criptoanalisis.
 """
 
 import math
@@ -94,6 +94,10 @@ def knapsacksol(s, v):
     Args:
         s: Mochila (supercreciente o no).
         v: Valor.
+    
+    Returns:
+        list: Lista binaria que representa los elementos seleccionados de la mochila.
+        None: Si no es posible alcanzar el valor v.
     """
     # Se asume que s es una mochila supercreciente
     result = []
@@ -337,29 +341,71 @@ def main_menu():
     """
     Menú principal para interactuar con las funciones de cifrado, descifrado y criptoanálisis.
     """
+    menu=0
+
     while True:
-        print("\n==== Menú Principal ====")
-        print("[1] Cifrar un mensaje")
-        print("[2] Descifrar un mensaje")
-        print("[3] Generar una mochila publica y privada")
-        print("[4] Realizar criptoanálisis (Shamir y Zippel)")
-        print("[5] Salir")
-        
-        choice = input("[*] Elige una opción (1/2/3/4): ").strip()
-        
-        if choice == "1":
-            cipher_message()
-        elif choice == "2":
-            decipher_message()
-        elif choice == "3":
-            generate_public_private_key()
-        elif choice == "4":
-            perform_cryptoanalysis()
-        elif choice == "5":
-            print("[+] ¡Hasta luego!")
-            break
-        else:
-            print("[!] Opción no válida. Intenta de nuevo.")
+
+        while menu == 0:
+            print("\n==== Menú Principal ====")
+            print("¿Con qué tipo de mochilas quieres trabajar?")
+            print("[1] Mochilas simples")
+            print("[2] Mochilas trampa")
+            print("[3] Salir")
+            
+            choice = input("[*] Elige una opción (1/2/3): ").strip()
+            
+            if choice == "1":
+                menu = 1
+            elif choice == "2":
+                menu = 2
+            elif choice == "3":
+                print("[+] ¡Hasta luego!")
+                exit(0)
+            else:
+                print("[!] Opción no válida. Intenta de nuevo.")
+
+        while menu == 1:
+            print("\n==== Menú Mochilas Normales ====")
+            print("[1] Cifrar un mensaje")
+            print("[2] Descifrar un mensaje")
+            print("[3] Generar una mochila")
+            print("[4] Volver")
+            
+            choice = input("[*] Elige una opción (1/2/3/4): ").strip()
+            
+            if choice == "1":
+                cipher_message()
+            elif choice == "2":
+                decipher_message()
+            elif choice == "3":
+                generate_random_knapsack()
+            elif choice == "4":
+                menu = 0
+            else:
+                print("[!] Opción no válida. Intenta de nuevo.")
+
+        while menu == 2:
+            print("\n==== Menú Mochilas Trampa ====")
+            print("[1] Cifrar un mensaje")
+            print("[2] Descifrar un mensaje")
+            print("[3] Generar una mochila publica y privada")
+            print("[4] Realizar criptoanálisis (Shamir y Zippel)")
+            print("[5] Volver")
+            
+            choice = input("[*] Elige una opción (1/2/3/4/5): ").strip()
+            
+            if choice == "1":
+                cipher_message()
+            elif choice == "2":
+                decipher_message_trap()
+            elif choice == "3":
+                generate_public_private_key()
+            elif choice == "4":
+                perform_cryptoanalysis()
+            elif choice == "5":
+                menu = 0
+            else:
+                print("[!] Opción no válida. Intenta de nuevo.")
 
 def parse_knapsack_input(input_str):
     """
@@ -399,7 +445,7 @@ def cipher_message():
     encrypted = knapsackcipher(message, knapsack)
     print(f"[+] Mensaje cifrado: {encrypted}")
 
-def decipher_message(): #TODO - Permitir descifrar con mochila trampa
+def decipher_message():
     """
     Permite descifrar un mensaje cifrado utilizando una mochila supercreciente.
     """
@@ -412,6 +458,26 @@ def decipher_message(): #TODO - Permitir descifrar con mochila trampa
     
     try:
         decrypted = knapsackdecipher(encrypted_message, knapsack)
+        print(f"[+] Mensaje descifrado: {decrypted}")
+    except ValueError as e:
+        print(f"[!] Error al descifrar: {e}")
+
+def decipher_message_trap(): #TODO - Permitir descifrar con mochila trampa
+    """
+    Permite descifrar un mensaje cifrado utilizando una mochila privada.
+    """
+    print("\n==== Descifrar un mensaje ====")
+    encrypted_message = input("[*] Introduce el mensaje cifrado (ejemplo: [82, 123, 39]): ").strip()
+    encrypted_message = parse_knapsack_input(encrypted_message)
+    
+    knapsack = input("[*] Introduce la mochila privada (ejemplo: [2, 3, 7, 14]): ").strip()
+    knapsack = parse_knapsack_input(knapsack)
+    
+    m = int(input("[*] Introduce el módulo m: "))
+    w = int(input("[*] Introduce w: "))
+
+    try:
+        decrypted = knapsackdeciphermh(knapsack, m, w, encrypted_message)
         print(f"[+] Mensaje descifrado: {decrypted}")
     except ValueError as e:
         print(f"[!] Error al descifrar: {e}")
@@ -431,7 +497,7 @@ def perform_cryptoanalysis():
         print(f"\n\n[+] Probando para la mochila {public_knapsack}, (m={m}, w={w})")
     else:
         public_knapsack = input("[*] Introduce la mochila pública separada por comas (ejemplo: 82,123,39): ").strip()
-        public_knapsack = [int(x) for x in public_knapsack.split(",")]
+        public_knapsack = parse_knapsack_input(public_knapsack)
     
         m = int(input("[*] Introduce el valor del módulo m: ").strip())
         #max_range = int(input("Introduce el rango máximo para el ataque: ").strip())
@@ -443,7 +509,7 @@ def perform_cryptoanalysis():
     else:
         print("[!]No se pudo recuperar una mochila supercreciente.")
 
-def generate_random_knapsack(size=7, start=2, step=2):
+def generate_random_knapsack(size=0, start=2, step=2):
     """
     Genera una mochila aleatoria para el cifrado.
 
@@ -456,8 +522,13 @@ def generate_random_knapsack(size=7, start=2, step=2):
         Devuelve la mochila generada.
     """
     knapsack = [start]
+    if size == 0:
+        size=int(input("[*] Introduce el tamaño de la mochila: "))
+
     for _ in range(1, size):
-        knapsack.append(knapsack[-1] + random.randint(step, step * 2))
+        next_value = sum(knapsack) + random.randint(step, step * 2)
+        knapsack.append(next_value)
+    print(f"[+] Mochila aleatoria generada: {knapsack}")
     return knapsack
 
 def generate_public_private_key():
