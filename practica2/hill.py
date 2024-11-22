@@ -44,18 +44,39 @@ if args.verbose:
     print("[Debug Mode]")
     debug=1
 
+def leer_matriz():
+    """
+    Permite al usuario introducir una matriz en formato Python.
+    Ejemplo: [[17, 22], [22, 7]]
+
+    Returns:
+        list: La matriz introducida como una lista de listas.
+    """
+    try:
+        entrada = input("Introduce la matriz en formato [[a, b], [c, d]]: ")
+        matriz = eval(entrada)
+        if not all(isinstance(fila, list) for fila in matriz):
+            raise ValueError("La entrada no es una matriz válida.")
+        return matriz
+    except Exception as e:
+        print(f"Error: {e}")
+        print("Asegúrate de introducir la matriz en el formato correcto.")
+        return leer_matriz()  # Reintentar
+
 # Cifrado Hill
 def hillcipher(text, key_matrix):
 
-    n = len(key_matrix)
+    n = cuadrada(key_matrix)
     
-    if not cuadrada(key_matrix):
+    if n == 0:
         raise ValueError("La clave debe ser una matriz cuadrada.")
     
     text_numbers = TexttoNumber(text)
+    
+    if debug: print(f"[DEBUG] TexttoNumber={text_numbers} ({type(text_numbers)})")
 
     while len(text_numbers) % n != 0:
-        text_numbers.append(0)  # Padding con 'a'
+        text_numbers.append(27)  # Padding con '#'
 
     encrypted = []
     for i in range(0, len(text_numbers), n):
@@ -69,7 +90,7 @@ def hillcipher(text, key_matrix):
             suma = 0  # Inicializamos la suma para la columna actual
             for j in range(n):  # Iteramos por cada elemento del bloque
                 suma += int(block[j]) * key_matrix[j][k]  # Multiplicamos y acumulamos
-            suma_mod = suma % 26  # Reducimos el resultado módulo 26
+            suma_mod = suma % MODULO  # Reducimos el resultado módulo MODULO
             result.append(str(suma_mod))  # Añadimos el valor cifrado al bloque
         encrypted.extend(result)
     return NumberstoText("".join(encrypted))
@@ -77,7 +98,7 @@ def hillcipher(text, key_matrix):
 # Descifrado Hill
 def hilldecipher(encrypted_text, key_matrix):
 
-    inverse_key = InvModMatrix(key_matrix, 26)
+    inverse_key = InvModMatrix(key_matrix, MODULO)
 
     encrypted_numbers = TexttoNumber(encrypted_text)
 
@@ -97,8 +118,8 @@ def hilldecipher(encrypted_text, key_matrix):
             for j in range(n):
                 suma += int(block[j]) * key_matrix[j][k]
             
-            # Reducimos el resultado módulo 26 y lo añadimos al bloque cifrado
-            result.append(str(suma % 26))
+            # Reducimos el resultado módulo MODULO y lo añadimos al bloque cifrado
+            result.append(str(suma % MODULO))
         
         decrypted.extend(result)
     return NumberstoText("".join(decrypted))
@@ -107,19 +128,88 @@ def hilldecipher(encrypted_text, key_matrix):
 def generar_clave_hill(n):
     while True:
         clave = [[random.randint(0, 25) for _ in range(n)] for _ in range(n)]
-        if determinante_modular(clave, 26) != 0 and algeucl(determinante_modular(clave, 26), 26) == 1:
+        if determinante_modular(clave, MODULO) != 0 and algeucl(determinante_modular(clave, MODULO), MODULO) == 1:
             return clave
 
+def generar_clave_menu():
+
+    while True:
+        print("\n===== Cifrado Hill - Generar Clave ======")
+        print("1. Aleatoria")
+        print("2. Introducir manualmente")
+        print("3. Volver")
+
+        opcion = input("[*] Elige una opción: ")
+
+        if opcion == "1":
+            n = input("[*] Elige el tamaño de la matriz: ")
+            n = int(n)
+            return generar_clave_hill(n)
+        
+        elif opcion == "2":
+            return leer_matriz()
+        
+        elif opcion == "3":
+            print("[!] No se ha generado ninguna clave.")
+            break
+        else:
+            print("Opción no válida. Inténtalo de nuevo.")
+
 # Pruebas
-def main():
-    print("Cifrado Hill")
-    key = generar_clave_hill(2)  # Matriz 2x2 como clave
-    print("Clave generada:", key)
-    mensaje = input("Introduce el mensaje a cifrar: ")
-    cifrado = hillcipher(mensaje, key)
-    print("Texto cifrado:", cifrado)
-    descifrado = hilldecipher(cifrado, key)
-    print("Texto descifrado:", descifrado)
+def main_menu():
+    """
+    Lógica del menú.
+    """
+
+    key = []
+
+    while True:
+        print("\n===== Cifrado Hill ======")
+        print("1. Establecer clave")
+        print("2. Cifrar mensaje")
+        print("3. Descifrar mensaje")
+        print("4. Salir")
+
+        opcion = input("Elige una opción: ")
+
+        if opcion == "1":
+            key =  generar_clave_menu()
+            print(f"[+] Clave: {key}")
+        elif opcion == "2":
+            mensaje = input("Introduce el mensaje a cifrar: ")
+            mensaje_cifrado = hillcipher(mensaje, key)
+            print(f"[+] Mensaje cifrado: {mensaje_cifrado}")
+        elif opcion == "3":
+            mensaje_cifrado = input("[*] Introduce el mensaje cifrado a descifrar: ")
+            descifrado = hilldecipher(mensaje_cifrado, key)
+            print(f"[+] Mensaje descifrado: {descifrado}")
+        elif opcion == "4":
+            print("[+] Saliendo del programa.")
+            break
+        else:
+            print("[!] Opción no válida. Inténtalo de nuevo.")
 
 if __name__ == "__main__":
-    main()
+    #main_menu()
+
+    key_matrix = [[10, 17], [17, 15]]
+
+mensaje = "Hola a todos"
+
+
+
+# Intentar cifrar y descifrar
+
+try:
+
+    mensaje_cifrado = hillcipher(mensaje, key_matrix)
+
+    print(f"Mensaje cifrado: {mensaje_cifrado}")
+
+    mensaje_descifrado = hilldecipher(mensaje_cifrado, key_matrix)
+
+    print(f"Mensaje descifrado: {mensaje_descifrado}")
+
+except Exception as e:
+
+    print(f"Error: {e}")

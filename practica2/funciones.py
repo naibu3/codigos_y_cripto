@@ -12,6 +12,8 @@ Example:
 
 import random
 
+MODULO = 27
+
 # MCD mediante algoritmo de euclides, se comprueba que ambos números sean apropiados
 def algeucl(a, b):
     if(a<0 or b<0):
@@ -53,16 +55,16 @@ def eulerfun(n):
 
     return invertibles
 
-# Genera un valor k que sea coprimo con 26
-def generar_k():
-    invertibles = eulerfun(26)
+# Genera un valor k que sea coprimo con el modulo m
+def generar_k(m):
+    invertibles = eulerfun(27)
     return random.choice(invertibles)
 
-# Genera un valor d que sea coprimo con 26
-def generar_d():
+# Genera un valor d que sea coprimo con el modulo  m
+def generar_d(m):
     while True:
         d = random.randint(0, 25)
-        if algeucl(d, 26) == 1:  # d es coprimo con 26
+        if algeucl(d, m) == 1:  # d es coprimo con m
             return d
 
 # Devuelve la dimension si es cuadrada ó 0 si no lo es
@@ -94,12 +96,13 @@ def determinante_modular(matriz, n):
 def matriz_menor(matriz, i, j):
     return [fila[:j] + fila[j + 1:] for fila in (matriz[:i] + matriz[i + 1:])]
 
-def matriz_adjunta(matriz):
+def matriz_adjunta(matriz, m):
     """
     Busca la adjunta de una matriz.
 
     Args:
-        matriz: Matriz a buscar la adjunta. Debe ser en formato numpy.
+        matriz: Matriz a buscar la adjunta.
+        m: Modulo m.
 
     Return:
         Devuelve la matriz adjunta.
@@ -110,7 +113,7 @@ def matriz_adjunta(matriz):
     for i in range(n):
         for j in range(n):
             menor = matriz_menor(matriz, i, j)
-            cofactor = (-1) ** (i + j) * determinante_modular(menor, 26)
+            cofactor = (-1) ** (i + j) * determinante_modular(menor, m)
             adjunta[j][i] = cofactor
     return adjunta
 
@@ -145,7 +148,7 @@ def InvModMatrix(matriz, n):
         exit(-1)
 
     det_inv = invmod(det, n)
-    adjunta = matriz_adjunta(matriz)
+    adjunta = matriz_adjunta(matriz, n)
 
     inversa_mod = []
     # Iteramos por cada fila de la matriz adjunta
@@ -176,7 +179,7 @@ def TexttoNumber(a):
             num = ord(char) - ord('a')
             # Asegúrate de que cada número tenga dos dígitos, agregando un cero si es necesario
             result.append(f"{num:02}")
-        else: result.append('30')
+        else: result.append('27')
     return ''.join(result)
 
 def NumberstoText(a):
@@ -194,7 +197,7 @@ def NumberstoText(a):
     # Procesa la cadena en bloques de 2 caracteres
     for i in range(0, len(a), 2):
         
-        if a[i:i+2] == '##': num = 30
+        if a[i:i+2] == '##': num = 27
         else: num = int(a[i:i+2])  # Convierte el bloque a un número
 
         # Convierte el número a letra (00 -> 'a', 01 -> 'b', etc.)

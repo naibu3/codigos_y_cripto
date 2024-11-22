@@ -64,10 +64,10 @@ def Afincypher(text, k, d):
         num = int(tocipher[i:i+2])  # Convierte el bloque a un número
 
         if 0 <= num <= 26:
-            if debug: print(f"[DEBUG] Cifrando -> {num} => {(num*k + d)%26}") #DEBUG
+            if debug: print(f"[DEBUG] Cifrando -> {num} => {(num*k + d)%MODULO}") #DEBUG
             
-            num = (num*k + d)%26
-            ciphered += str(num).zfill(2) # Aplica el cifrado afin f(x)=kx+d mod 26
+            num = (num*k + d) % MODULO
+            ciphered += str(num).zfill(2) # Aplica el cifrado afin f(x)=kx+d mod MODULO
 
         else: ciphered += '##'
 
@@ -86,20 +86,20 @@ def Afindecypher(text, k, d):
         Devuelve la cadena numérica correspondiente al texto cifrado.
     """
 
-    inv_k = invmod(k, 26)
+    inv_k = invmod(k, MODULO)
 
     deciphered = ""
     # Procesa la cadena en bloques de 2 caracteres
     for i in range(0, len(text), 2):
 
-        if text[i:i+2] == '##': num = 30
+        if text[i:i+2] == '##': num = 27
         else: num = int(text[i:i+2])  # Convierte el bloque a un número
 
         if 0 <= num <= 26:
-            if debug: print(f"[DEBUG] Descifrando -> {num} => {((num - d) * inv_k) % 26}") #DEBUG
+            if debug: print(f"[DEBUG] Descifrando -> {num} => {((num - d) * inv_k) % MODULO}") #DEBUG
             
-            num = ((num - d) * inv_k) % 26
-            deciphered += str(num).zfill(2) # Aplica el descifrado afin f(x)=kx+d mod 26
+            num = ((num - d) * inv_k) % MODULO
+            deciphered += str(num).zfill(2) # Aplica el descifrado afin f(x)=kx+d mod MODULO
 
         else: deciphered += '##'
 
@@ -111,7 +111,7 @@ def main():
     """
 
     while True:
-        print("\n--- Menú ---")
+        print("\n--- CIFRADO AFIN ---")
         print("1. Ingresar k y d")
         print("2. Generar k y d aleatorios")
         print("3. Cifrar mensaje")
@@ -124,8 +124,8 @@ def main():
             k = int(input("Introduce el valor de k (0 <= k < 26) y asegúrate de que tiene inverso: "))
             d = int(input("Introduce el valor de d (0 <= d < 26) y asegúrate de que es coprimo con 26: "))
         elif opcion == "2":
-            k = generar_k()
-            d = generar_d()
+            k = generar_k(MODULO)
+            d = generar_d(MODULO)
             print(f"Valores generados: k = {k}, d = {d}")
         elif opcion == "3":
             mensaje = input("Introduce el mensaje a cifrar: ")

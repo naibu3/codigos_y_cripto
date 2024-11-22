@@ -496,7 +496,7 @@ def perform_cryptoanalysis():
         w=67
         print(f"\n\n[+] Probando para la mochila {public_knapsack}, (m={m}, w={w})")
     else:
-        public_knapsack = input("[*] Introduce la mochila pública separada por comas (ejemplo: 82,123,39): ").strip()
+        public_knapsack = input("[*] Introduce la mochila pública: ").strip()
         public_knapsack = parse_knapsack_input(public_knapsack)
     
         m = int(input("[*] Introduce el valor del módulo m: ").strip())
