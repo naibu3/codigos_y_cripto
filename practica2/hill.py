@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 """Practica 1.1 - Cifrado Afín
@@ -73,26 +73,41 @@ def hillcipher(text, key_matrix):
     
     text_numbers = TexttoNumber(text)
     
+    #NO ES NECESARIO
+    #while len(text_numbers) % n != 0:
+    #    text_numbers.append(27)  # Padding con '#'
+
     if debug: print(f"[DEBUG] TexttoNumber={text_numbers} ({type(text_numbers)})")
 
-    while len(text_numbers) % n != 0:
-        text_numbers.append(27)  # Padding con '#'
+    # Creamos una lista con los numeros
+    bloques = [int(text_numbers[i:i + 2]) for i in range(0, len(text_numbers), 2)]
+
+    if debug: print(f"[DEBUG] Bloques={bloques} ({type(bloques)})")
 
     encrypted = []
-    for i in range(0, len(text_numbers), n):
-
-        block = text_numbers[i:i + n]
+    for i in range(0, len(bloques), n):
         
+        block = bloques[i:i + n]
+
+        if debug: print(f"[DEBUG] Bloque a cifrar => {block} ({type(block)})")
+
         # Inicializamos el bloque cifrado como una lista vacía
         result = []
-        # Iteramos por cada columna de la matriz clave
+        # Iteramos por cada fila de la matriz clave
         for k in range(n):
             suma = 0  # Inicializamos la suma para la columna actual
-            for j in range(n):  # Iteramos por cada elemento del bloque
-                suma += int(block[j]) * key_matrix[j][k]  # Multiplicamos y acumulamos
+            for j in range(n):  # Iteramos por cada columna de la clave/elemento del bloque
+                suma += block[j] * key_matrix[k][j]  # Multiplicamos y acumulamos
             suma_mod = suma % MODULO  # Reducimos el resultado módulo MODULO
-            result.append(str(suma_mod))  # Añadimos el valor cifrado al bloque
+
+            # Añadimos el valor cifrado al bloque (asegurando que tenga 2 cifras)
+            result.append(str(suma_mod).zfill(2))  
+        
         encrypted.extend(result)
+    
+    if debug: print(f"[DEBUG] encrypted={encrypted}")
+    if debug: print(f"[DEBUG] returned={NumberstoText(''.join(encrypted))}")
+
     return NumberstoText("".join(encrypted))
 
 # Descifrado Hill
@@ -100,28 +115,46 @@ def hilldecipher(encrypted_text, key_matrix):
 
     inverse_key = InvModMatrix(key_matrix, MODULO)
 
-    encrypted_numbers = TexttoNumber(encrypted_text)
-
     n = len(inverse_key)
 
-    decrypted = []
-    for i in range(0, len(encrypted_numbers), n):
+    # Tratamiento de la entrada
+    encrypted_numbers = TexttoNumber(encrypted_text)
 
-        block = encrypted_numbers[i:i + n]
+    if debug: print(f"[DEBUG] Encripted numbers={encrypted_numbers} ({type(encrypted_numbers)})")
+
+    # Creamos una lista con los numeros
+    bloques = [int(encrypted_numbers[i:i + 2]) for i in range(0, len(encrypted_numbers), 2)]
+
+    if debug: print(f"[DEBUG] Bloques={bloques} ({type(bloques)})")
+
+    decrypted = []
+    for i in range(0, len(bloques), n):
+
+        block = bloques[i:i + n]
+
+        if debug: print(f"[DEBUG] Bloque a descifrar => {block} ({type(block)})")
 
         # Inicializamos el bloque cifrado como una lista vacía
         result = []
         # Iteramos por cada columna de la matriz clave
         for k in range(n):
-            # Calculamos la suma de productos para la columna actual
+            # Calculamos la suma de productos para la fila actual
             suma = 0
             for j in range(n):
-                suma += int(block[j]) * key_matrix[j][k]
+                suma += block[j] * inverse_key[k][j]
             
-            # Reducimos el resultado módulo MODULO y lo añadimos al bloque cifrado
-            result.append(str(suma % MODULO))
-        
+            suma_mod = suma % MODULO  # Reducimos el resultado módulo MODULO
+
+            # Lo añadimos al mensaje descifrado asegurando que tenga 2 cifras
+            result.append(str(suma_mod).zfill(2))
+
+        if debug: print(f"[DEBUG] decrypted block={result}")
+
         decrypted.extend(result)
+    
+    if debug: print(f"[DEBUG] decrypted={decrypted}")
+    if debug: print(f"[DEBUG] returned={NumberstoText(''.join(decrypted))}")
+
     return NumberstoText("".join(decrypted))
 
 # Generar clave aleatoria para Hill
@@ -190,26 +223,4 @@ def main_menu():
             print("[!] Opción no válida. Inténtalo de nuevo.")
 
 if __name__ == "__main__":
-    #main_menu()
-
-    key_matrix = [[10, 17], [17, 15]]
-
-mensaje = "Hola a todos"
-
-
-
-# Intentar cifrar y descifrar
-
-try:
-
-    mensaje_cifrado = hillcipher(mensaje, key_matrix)
-
-    print(f"Mensaje cifrado: {mensaje_cifrado}")
-
-    mensaje_descifrado = hilldecipher(mensaje_cifrado, key_matrix)
-
-    print(f"Mensaje descifrado: {mensaje_descifrado}")
-
-except Exception as e:
-
-    print(f"Error: {e}")
+    main_menu()
