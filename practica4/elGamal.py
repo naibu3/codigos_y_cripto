@@ -23,9 +23,10 @@ def generate_keys_elgamal(q=None, g=None, a=None):
     
     if not g:
         g = random.randint(2, q - 1)  # Generador.
-    
+
     if not a:
         a = random.randint(2, q - 2)  # Clave privada.
+
     h = pow(g, a, q)  # Clave pública.
 
     public_key = (q, g, h)
@@ -114,43 +115,41 @@ def main():
 
         opcion = input("Elige una opción: ")
 
-        if opcion == "1":
-            k = int(input("Introduce el valor de k (0 <= k < 26) y asegúrate de que tiene inverso: "))
-            d = int(input("Introduce el valor de d (0 <= d < 26) y asegúrate de que es coprimo con 26: "))
+        if opcion == "1": # Generacion de claves
+
+            q = int(input("[*] Introduce el valor de q (0 para valor aleatorio): "))
+            g = int(input("[*] Introduce el valor de g (0 para valor aleatorio): "))
+            a = int(input("[*] Introduce el valor de a (0 para valor aleatorio): "))
+
+            public_key, private_key = generate_keys_elgamal(q, g, a)
+
+            print("[+] Clave pública:", public_key)
+            print("[+] Clave privada:", private_key)
+
         elif opcion == "2":
-            k = generar_k(MODULO)
-            d = generar_d(MODULO)
-            print(f"Valores generados: k = {k}, d = {d}")
+            
+            mensaje = input("[*] Introduce el mensaje a cifrar: ")
+            gk, criptograma = elgamal_encrypt(public_key, mensaje)
+            print("[+] Criptograma:", criptograma)
+            print(f"[+] gk: {gk}")
+
         elif opcion == "3":
-            mensaje = input("Introduce el mensaje a cifrar: ")
-            cifrado = Afincypher(mensaje, k, d)
-            print(f"Mensaje cifrado: {cifrado}")
+            
+            cipher_text = input("\n[*] Introduce el mensaje cifrado (como una lista de bloques, ej. [a, b, c]): ")
+            gk = int(input("\n[*] Introduce gk: "))
+
+            cipher_blocks = eval(cipher_text)  # Convierte la cadena de texto en una lista de bloques
+
+            descifrado = elgamal_decrypt(private_key, public_key, (gk, cipher_blocks) )
+            print(f"[+] Mensaje descifrado: {descifrado}")
+
         elif opcion == "4":
-            mensaje_cifrado = input("Introduce el mensaje cifrado a descifrar: ")
-            descifrado = Afindecypher(mensaje_cifrado, k, d)
-            print(f"Mensaje descifrado: {NumberstoText(descifrado)}")
-        elif opcion == "5":
-            print("Saliendo del programa.")
+            print("[!] Saliendo del programa.")
             break
         else:
-            print("Opción no válida. Inténtalo de nuevo.")
+            print("[!] Opción no válida. Inténtalo de nuevo.")
 
 
 # Ejemplo de uso
 if __name__ == "__main__":
-    # Generar claves
-    public_key, private_key = generate_keys_elgamal()
-    print("Clave pública:", public_key)
-    print("Clave privada:", private_key)
-
-    # Mensaje original
-    mensaje = "Esto es una prueba"  # Un número que represente un bloque del mensaje
-    print("Mensaje original:", mensaje)
-
-    # Cifrar mensaje
-    criptograma = elgamal_encrypt(public_key, mensaje)
-    print("Criptograma:", criptograma)
-
-    # Descifrar mensaje
-    mensaje_descifrado = elgamal_decrypt(private_key, public_key, criptograma)
-    print("Mensaje descifrado:", mensaje_descifrado)
+    main()
