@@ -29,20 +29,7 @@ Todo:
     * Criptoanálisis.
 """
 
-import argparse
 from funciones import *
-
-parser = argparse.ArgumentParser()
-parser.add_argument("-v", "--verbose", help="Mostrar información de depuración", action="store_true")
-#parser.add_argument("-f", "--file", help="Nombre de archivo a procesar")
-args = parser.parse_args()
-
-#FLAGS
-debug=0
-
-if args.verbose:
-    print("[Debug Mode]")
-    debug=1
 
 def leer_matriz():
     """
@@ -73,14 +60,13 @@ def hillcipher(text, key_matrix):
     
     text_numbers = TexttoNumber(text)
     
-    #NO ES NECESARIO
-    #while len(text_numbers) % n != 0:
-    #    text_numbers.append(27)  # Padding con '#'
-
     if debug: print(f"[DEBUG] TexttoNumber={text_numbers} ({type(text_numbers)})")
 
     # Creamos una lista con los numeros
     bloques = [int(text_numbers[i:i + 2]) for i in range(0, len(text_numbers), 2)]
+
+    while len(bloques) % n != 0:
+        text_numbers.append(27)  # Padding con '#'
 
     if debug: print(f"[DEBUG] Bloques={bloques} ({type(bloques)})")
 

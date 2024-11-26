@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 """Practica 4 - RSA
@@ -32,7 +32,19 @@ Todo:
 import random
 import time
 import sympy
-from math import gcd
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-v", "--verbose", help="Mostrar información de depuración", action="store_true")
+#parser.add_argument("-f", "--file", help="Nombre de archivo a procesar")
+args = parser.parse_args()
+
+#FLAGS
+debug=0
+
+if args.verbose:
+    print("[Debug Mode]")
+    debug=1
 
 #========================================================================
 #   FUNCIONES AUXILIARES
@@ -211,8 +223,9 @@ def keygeneration(p=None, q=None, e_option=None):
     n = p * q
     phi_n = (p - 1) * (q - 1)
 
-    print(f"[DEBUG] p = {p}; q = {q}") # DEBUG
-    print(f"[DEBUG] n = {n}; phi_n = {phi_n}") # DEBUG
+    if debug:
+        print(f"[DEBUG] p = {p}; q = {q}") # DEBUG
+        print(f"[DEBUG] n = {n}; phi_n = {phi_n}") # DEBUG
 
     # Selección de e
     if e_option is None:
@@ -221,7 +234,7 @@ def keygeneration(p=None, q=None, e_option=None):
 
     if e_option == "fermat" or e_option == "":  # Solo recomendado para n>65537
         if n < 65537:
-            raise ValueError("[!] El valor de n es muy pequeño ({n}), debe ser mayor de 65537.")
+            print("[!] El valor de n es muy pequeño ({n}), debe ser mayor de 65537.")
         e = 65537
 
     elif e_option == "random":
@@ -237,12 +250,12 @@ def keygeneration(p=None, q=None, e_option=None):
     else:
         raise ValueError("[!] Opción de e no válida. Use 'Fermat', 'random' o 'user'.")
 
-    print(f"[DEBUG] e = {e}") # DEBUG
+    if debug: print(f"[DEBUG] e = {e}") # DEBUG
 
     # Calcular d, el inverso modular de e módulo phi(n)
     d = sympy.mod_inverse(e, phi_n)
 
-    print(f"[DEBUG] d = {d}") # DEBUG
+    if debug: print(f"[DEBUG] d = {d}") # DEBUG
 
     # Claves pública y privada
     public_key = (e, n)
@@ -276,7 +289,7 @@ def letters2num(a):
 
 def preparenumcipher(text, n):
     """
-    Toma una cadena numerica (un texto transformado a su equivalente numérico) y lo divide en bloques de tamaño fijado por n.
+    Toma un texto y lo divide en bloques numericos de tamaño fijado por n.
 
     Args:
         text: Texto a dividir.
@@ -288,6 +301,7 @@ def preparenumcipher(text, n):
 
     #Convierte el texto en numeros
     text = letters2num(text)
+    if debug: print(f"[DEBUG] To numbers = {text}")
     
     # Divide el texto en bloques de tamaño n
     blocks = [text[i:i + n] for i in range(0, len(text), n)]
@@ -334,7 +348,7 @@ def rsaciphertext(text, public_key, block_size):
     # Convierte el texto en bloques numéricos
     blocks = preparenumcipher(text, block_size)
 
-    print(f"[DEBUG] Bloques RAW {blocks}.") # DEBUG
+    if debug: print(f"[DEBUG] Bloques cifrados {blocks}.") # DEBUG
     
     # Cifra cada bloque con la clave pública
     cipher_blocks = [rsacipher(int(block), public_key) for block in blocks]
@@ -411,7 +425,7 @@ def rsadecipher(cipher_block, private_key):
     """
     d, n = private_key
     # Descifra el bloque: m = (cipher_block^d) mod n
-    print(f"Bloque a descifrar: {cipher_block}")
+    if debug: print(f"[DEBUG] Bloque a descifrar: {cipher_block}")
     deciphered_block = pow(cipher_block, d, n)
     return deciphered_block
 
@@ -432,15 +446,15 @@ def rsadeciphertext(cipher_blocks, private_key, block_size):
     for cipher_block in cipher_blocks:
         decrypted_block = rsadecipher(cipher_block, private_key)
         decrypted_blocks.append(decrypted_block)
-        print(f"[DEBUG] Bloque cifrado: {cipher_block}, Bloque descifrado: {decrypted_block}")
+        if debug: print(f"[DEBUG] Bloque cifrado: {cipher_block}, Bloque descifrado: {decrypted_block}")
     
     # Convertir los bloques en una cadena numérica lista para su decodificación
     text = preparetextdecipher(decrypted_blocks, block_size)
-    print(f"[DEBUG] Texto decodificado (sin padding): {text}")
+    if debug: print(f"[DEBUG] Texto decodificado (sin padding): {text}")
 
     # Convertir el texto numérico en letras
     plaintext = nums2letter(text)
-    print(f"[DEBUG] Texto final decodificado: {plaintext}")
+    if debug: print(f"[DEBUG] Texto final decodificado: {plaintext}")
     return plaintext
 
 #========================================================================

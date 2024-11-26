@@ -11,8 +11,21 @@ Example:
 """
 
 import random
+import argparse
 
 MODULO = 27
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-v", "--verbose", help="Mostrar información de depuración", action="store_true")
+#parser.add_argument("-f", "--file", help="Nombre de archivo a procesar")
+args = parser.parse_args()
+
+#FLAGS
+debug=0
+
+if args.verbose:
+    print("[Debug Mode]")
+    debug=1
 
 # MCD mediante algoritmo de euclides, se comprueba que ambos números sean apropiados
 def algeucl(a, b):
@@ -36,11 +49,11 @@ def invmod(p, n):
         count += 1
 
     if r[-1] == 0:  # No existe inverso
-        print(f"[INFO] No existe inverso para {p} en Z{n}")
+        if debug: print(f"[INFO] No existe inverso para {p} en Z{n}")
         return None
     else:  # Existe inverso
         inv = s[-1] % n
-        print(f"[INFO] El inverso para {p} en Z{n} es {inv}")
+        if debug: print(f"[DEBUG] El inverso para {p} en Z{n} es {inv}")
         return inv
 
 
@@ -50,7 +63,7 @@ def eulerfun(n):
     for i in range(0, n):
         if invmod(i, n): invertibles.append(i)
 
-    print(f"[INFO] Existen los inversos en Z{n} para: {invertibles}")
+    if debug:  print(f"[DEBUG] Existen los inversos en Z{n} para: {invertibles}")
 
 
     return invertibles
@@ -177,7 +190,7 @@ def TexttoNumber(a):
     for char in a.lower():
         if 'a' <= char <= 'z':
             num = ord(char) - ord('a')
-            # Asegúrate de que cada número tenga dos dígitos, agregando un cero si es necesario
+            # Asegurar de que cada número tenga dos dígitos, agregando un cero si es necesario
             result.append(f"{num:02}")
         else: result.append('27')
     return ''.join(result)
