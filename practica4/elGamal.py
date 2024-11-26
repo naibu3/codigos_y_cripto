@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from rsa import *
-import random
-from sympy import mod_inverse, isprime
 
 def generate_keys_elgamal(q=None, g=None, a=None):
     """
