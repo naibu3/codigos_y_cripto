@@ -7,7 +7,6 @@ class Agente:
 
     firma=""
 
-
     block_size = 7
 
     # Constructor (opcional, se ejecuta al crear una instancia)
@@ -59,24 +58,46 @@ class Agente:
         if self.firma == "":
             print(f"[{self.name}] Debes asignar una firma a este agente!")
 
-        if debug: print(f"[{self.name}] Cifrando firma. ")
+        if debug: print(f"\n[{self.name}] Cifrando firma. ") #DEBUG
 
         # 1er Cifrado
         ciphered = rsaciphertext(self.firma, self.private_key, self.block_size)
 
-        if debug: print(f"[{self.name}] Ciphered: {ciphered} ")
+        if debug: print(f"[{self.name}] 1st ciphered ({self.name} priv key): {ciphered} ") #DEBUG
 
-        # Convierte la cadena de bloques resultante en texto que pueda volver a cifrarse
-        ciphered_str = preparetextdecipher(ciphered, block_size)
+        '''
+        # Convertimos los bloques a cadena numerica
+        ciphered_str = preparetextdecipher(ciphered, self.block_size)
 
-        if debug: print(f"[{self.name}] Ciphered num string: {ciphered_str} ")
+        # De cadena numerica volvemos a convertir en bloques pero de la longitud de bloque del receptor
+        blocks = [ciphered_str[i:i + block_size] for i in range(0, len(ciphered_str), block_size)] # Divide el texto en bloques de tamaño n
+        
+        # Rellena el último bloque si es necesario
+        if len(blocks[-1]) < block_size:
+            remaining_length = block_size - len(blocks[-1])
+            padding = '30' * (remaining_length // 2) + '0' * (remaining_length % 2)
+            blocks[-1] += padding[:remaining_length] #Añade el padding generado al ultimo bloque
+        
+        blocks = [int(block) for block in blocks]
+        '''
 
-        ciphered_letters = nums2letter(ciphered_str)
+        # Convertimos los bloques a cadena numerica
+        ciphered_str = ''.join([f"{block:0{self.block_size}}" for block in ciphered])
 
-        if debug: print(f"[{self.name}] Ciphered num letters: {ciphered_letters} ")
+        # De cadena numerica volvemos a convertir en bloques pero del tamaño del receptor
+        blocks = [ciphered_str[i:i + block_size] for i in range(0, len(ciphered_str), block_size)]
+
+        # Rellenamos si el último bloque no tiene el tamaño esperado
+        if len(blocks[-1]) < block_size:
+            remaining_length = block_size - len(blocks[-1])
+            blocks[-1] += '0' * remaining_length
+        blocks = [int(block) for block in blocks]
+
+
+        if debug: print(f"[{self.name}] Conversion para el segundo cifrado: {blocks} ") #DEBUG
 
         # 2o Cifrado
-        ciphered_2 = rsaciphertext(ciphered_letters, public_key, block_size)
+        ciphered_2 = [rsacipher(int(block), public_key) for block in blocks]
 
         return ciphered_2
 
@@ -92,16 +113,50 @@ class Agente:
 
     def descifrar_firma(self, ciphered, public_key, block_size):
 
-        if debug: print(f"[{self.name}] Descifrando firma. ")
+        if debug: print(f"\n[{self.name}] Descifrando firma. ({ciphered})")
 
-        deciphered_str = rsadeciphertext(ciphered, self.private_key, self.block_size)
+        # 1er descifrado -> No utilizo la función de rsa
+        # Realizamos el primer descifrado con la clave privada
+        decrypted_blocks = [rsadecipher(block, self.private_key) for block in ciphered]
 
-        # Convertir texto a bloques para volver a descifrar
-        deciphered_blocks = preparenumcipher(deciphered_str, block_size)
+        if debug: print(f"[{self.name}] 1er descifrado: {decrypted_blocks}")
 
-        deciphered = rsadeciphertext(deciphered_blocks, public_key, block_size)
+        '''# Convertimos la lista a cadena para dividir con el tamaño de bloque correcto
+        deciphered_str = preparetextdecipher(ciphered, self.block_size)
 
-        print(f"[{self.name}] Firma descifrada => {deciphered}")
+        if debug: print(f"[{self.name}] A cadena: {deciphered_str}")
+
+        # De cadena numerica volvemos a convertir en bloques pero de la longitud de bloque correcta
+        blocks = [deciphered_str[i:i + block_size] for i in range(0, len(deciphered_str), block_size)] # Divide el texto en bloques de tamaño n
+
+        # Rellena el último bloque si es necesario
+        if len(blocks[-1]) < block_size:
+            remaining_length = block_size - len(blocks[-1])
+            padding = '30' * (remaining_length // 2) + '0' * (remaining_length % 2)
+            blocks[-1] += padding[:remaining_length] #Añade el padding generado al ultimo bloque
+        
+        blocks = [int(block) for block in blocks]'''
+
+        if debug: print(f"[{self.name}] bloq_size: {self.block_size}")
+        # Convertimos la lista descifrada a cadena
+        deciphered_str = ''.join([f"{block:0{self.block_size}}" for block in decrypted_blocks])
+
+        # Convertimos a bloques para el descifrado final
+        blocks = [deciphered_str[i:i + block_size] for i in range(0, len(deciphered_str), block_size)]
+
+        # Rellenamos si necesario
+        if len(blocks[-1]) < block_size:
+            remaining_length = block_size - len(blocks[-1])
+            blocks[-1] += '0' * remaining_length
+        blocks = [int(block) for block in blocks]
+
+        # Segundo descifrado con la clave pública
+        deciphered = rsadeciphertext(blocks, public_key, block_size)
+
+
+        if debug: print(f"[{self.name}] A bloques: {blocks}")
+
+        deciphered = rsadeciphertext(blocks, public_key, block_size)
 
         return deciphered
 
@@ -109,9 +164,9 @@ class Agente:
 
         
         mensajeFirma = self.cifrar_mensaje(public_key, mensaje, block_size)
-        firma = self.cifrar_firma(public_key, block_size)
-
         print(f"[{self.name}] Mensaje + firma cifrado => {mensajeFirma}")
+
+        firma = self.cifrar_firma(public_key, block_size)
         print(f"[{self.name}] Firma cifrada => {firma}")
 
         return mensajeFirma, firma
@@ -123,15 +178,16 @@ class Agente:
             
             mensajeFirma = self.descifrar_mensaje(criptograma1)
             print(f"[{self.name}] Mensaje + firma descifrado => {mensajeFirma}")
+
             firma = self.descifrar_firma(criptograma2, public_key, block_size)
+            print(f"[{self.name}] Firma descifrada => {firma}")
 
         else:
             mensajeFirma = self.descifrar_mensaje(criptograma2)
-            firma = self.descifrar_firma(criptograma1, public_key, block_size)
-
-        if debug: 
             print(f"[{self.name}] Mensaje + firma descifrado => {mensajeFirma}")
-            print(f"[{self.name}] Firma descifrada => {firma}")
+
+            firma = self.descifrar_firma(criptograma1, public_key, block_size)
+            print(f"[{self.name}] Firma descifrada => {firma}")            
 
         return mensajeFirma, firma
 
