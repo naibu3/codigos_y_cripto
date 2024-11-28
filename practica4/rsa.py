@@ -348,7 +348,7 @@ def rsaciphertext(text, public_key, block_size):
     # Convierte el texto en bloques numéricos
     blocks = preparenumcipher(text, block_size)
 
-    if debug: print(f"[DEBUG] Bloques cifrados {blocks}.") # DEBUG
+    if debug: print(f"[DEBUG in rsaciphertext] Bloques a cifrar {blocks}.") # DEBUG
     
     # Cifra cada bloque con la clave pública
     cipher_blocks = [rsacipher(int(block), public_key) for block in blocks]

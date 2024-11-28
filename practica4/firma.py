@@ -44,6 +44,8 @@ class Agente:
         if self.firma == "":
             print(f"[{self.name}] Debes asignar una firma a este agente!")
 
+        if debug: print(f"[{self.name}] Cifrando mensaje. ")
+
         mensajeFirma = mensaje+self.firma
 
         print(f"[{self.name}] Mensaje + firma => {mensajeFirma}")
@@ -53,16 +55,34 @@ class Agente:
         return ciphered
     
     def cifrar_firma(self, public_key, block_size):
+    
+        if self.firma == "":
+            print(f"[{self.name}] Debes asignar una firma a este agente!")
+
+        if debug: print(f"[{self.name}] Cifrando firma. ")
+
+        # 1er Cifrado
         ciphered = rsaciphertext(self.firma, self.private_key, self.block_size)
 
+        if debug: print(f"[{self.name}] Ciphered: {ciphered} ")
+
         # Convierte la cadena de bloques resultante en texto que pueda volver a cifrarse
-        ciphered = nums2letter(preparetextdecipher(ciphered, block_size))
+        ciphered_str = preparetextdecipher(ciphered, block_size)
 
-        ciphered = rsaciphertext(ciphered, public_key, block_size)
+        if debug: print(f"[{self.name}] Ciphered num string: {ciphered_str} ")
 
-        return ciphered
+        ciphered_letters = nums2letter(ciphered_str)
+
+        if debug: print(f"[{self.name}] Ciphered num letters: {ciphered_letters} ")
+
+        # 2o Cifrado
+        ciphered_2 = rsaciphertext(ciphered_letters, public_key, block_size)
+
+        return ciphered_2
 
     def descifrar_mensaje(self, ciphered):
+
+        if debug: print(f"[{self.name}] Descifrando mensaje. ")
 
         deciphered = rsadeciphertext(ciphered, self.private_key, self.block_size)
 
@@ -72,12 +92,14 @@ class Agente:
 
     def descifrar_firma(self, ciphered, public_key, block_size):
 
-        deciphered = rsadeciphertext(ciphered, self.private_key, self.block_size)
+        if debug: print(f"[{self.name}] Descifrando firma. ")
+
+        deciphered_str = rsadeciphertext(ciphered, self.private_key, self.block_size)
 
         # Convertir texto a bloques para volver a descifrar
-        deciphered = preparenumcipher(deciphered, block_size)
+        deciphered_blocks = preparenumcipher(deciphered_str, block_size)
 
-        deciphered = rsadeciphertext(deciphered, public_key, block_size)
+        deciphered = rsadeciphertext(deciphered_blocks, public_key, block_size)
 
         print(f"[{self.name}] Firma descifrada => {deciphered}")
 
