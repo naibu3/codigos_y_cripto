@@ -448,7 +448,7 @@ def rsadeciphertext(cipher_blocks, private_key, block_size):
         decrypted_blocks.append(decrypted_block)
         if debug: print(f"[DEBUG] Bloque cifrado: {cipher_block}, Bloque descifrado: {decrypted_block}")
     
-    # Convertir los bloques en una cadena numérica lista para su decodificación
+    # Convertir los bloques en una cadena numérica lista para su conversión
     text = preparetextdecipher(decrypted_blocks, block_size)
     if debug: print(f"[DEBUG] Texto decodificado (sin padding): {text}")
 
