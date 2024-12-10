@@ -109,7 +109,7 @@ if __name__=="__main__":
 
     #LSB complex
     #LSB_complex_cypher('imagen.jpg', 'Hola mundo', 'imagen_codificada_compleja.png', 2)
-    #print(f"Mensaje oculto en imagen compleja: {LSB_complex_decypher('imagen_codificada_compleja.png', 150, 2)}") # => "Hola mundo"
+    #print(f"Mensaje oculto en imagen compleja: {LSB_complex_decypher('imagen_codificada_compleja.png', 200, 2)}") # => "Hola mundo"
 
 
     if args.encode:
@@ -122,4 +122,4 @@ if __name__=="__main__":
         LSB_complex_cypher(args.archivo, args.mensaje, 'imagen_codificada_compleja.png', args.complexity)
 
     if args.complex_decode:
-        print(f"Mensaje oculto: {LSB_simple_decypher(args.archivo, args.length)}\n")
+        print(f"Mensaje oculto: {LSB_complex_decypher(args.archivo, args.length, args.complexity)}\n")

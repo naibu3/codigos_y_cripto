@@ -1,6 +1,7 @@
 import numpy as np
 from PIL import Image
 import os
+import argparse
 
 def is_invertible(matrix, n):
     """Verifica si una matriz 2x2 es invertible en Z_n."""
@@ -149,7 +150,7 @@ def find_suitable_k(A, n):
     return k
 
 
-def desordenaimagenite(A, image_path, output_path, n):
+def desordenaimagenite(A, image_path, output_path, n, k=0):
     """
     Desordena una imagen utilizando la matriz A elevada a una potencia k en Z_n.
     Solicita al usuario el valor de k.
@@ -160,10 +161,11 @@ def desordenaimagenite(A, image_path, output_path, n):
         raise ValueError("La matriz A no es invertible en Z_n.")
     
     suitable_k = find_suitable_k(A, n)
-    print(f"Puedes usar los siguientes valores de k: {suitable_k}")
+    print(f"Puedes usar los valores de k menores que: {suitable_k}")
 
     # Solicitar el valor de k al usuario
-    k = int(input(f"Ingrese un valor k para desordenar la imagen (1 <= k): "))
+    if k==0:
+        k = int(input(f"Ingrese un valor k para desordenar la imagen (1 <= k): "))
     
     # Calcular A^k en Z_n
     Ak = mod_matrix_power(A, k, n)
@@ -202,7 +204,7 @@ def ordenaimagenite(A, image_path, output_path, n):
     Ak_inverse = matrix_mod_inverse(Ak, n)
     
     # Usar la función de desordenamiento con la matriz inversa para reordenar
-    desordenaimagenite(Ak_inverse, image_path, output_path, n)
+    desordenaimagenite(Ak_inverse, image_path, output_path, n, k)
     print(f"Imagen ordenada con k={k} guardada en {output_path}")
 
 def desordenaimagenproceso(A, image_path, output_dir, n, max_k):
@@ -245,30 +247,40 @@ def desordenaimagenproceso(A, image_path, output_dir, n, max_k):
         shuffled_img.save(output_path)
         print(f"Imagen desordenada con k={k} guardada en {output_path}")
 
+# Crear el parser
+parser = argparse.ArgumentParser(description="Manjador de argumentos")
+
+# Agregar argumentos
+parser.add_argument('archivo', help="Ruta al archivo de entrada")
+#parser.add_argument('-v', '--verbose', action='store_true', help="Activar modo verbose")
+parser.add_argument('-o', '--order', action='store_true', help="Opcion para ordenar una imagen")
+parser.add_argument('-d', '--disorder', action='store_true', help="Opcion para desordenar una imagen")
+parser.add_argument('-p', '--process', action='store_true', help="Opcion para desordenar una imagen con varios k")
+
+
+# Parsear los argumentos
+args = parser.parse_args()
 
 if __name__=="__main__":
 
     A = np.array([[1, 5], [2, 3]])
-    print(f"¿Es {A} invertible? {is_invertible(A, 291)}") # => True
+    #print(f"¿Es {A} invertible? {is_invertible(A, 291)}") # => True
 
-    print(f"Inverso:\n{matrix_mod_inverse(A, 291)}")
+    #print(f"Inverso:\n{matrix_mod_inverse(A, 291)}")
 
     n = 837 # Lado de la imagen
-    image_path = 'imagen.jpg'
+    image_path = args.archivo
     sq_image = 'imagen_cuadrada.png'
 
     crop_to_square(image_path, sq_image)
 
-    #desordenaimagen(A, sq_image, 'imagen_desordenada.png', n)
-    #ordenaimagen(A, 'imagen_desordenada.png', 'imagen_ordenada.png', n)
-
     output_dir = 'imagenes_desordenadas'
 
     # 1. Desordenar una imagen con un valor k especificado
-    desordenaimagenite(A, sq_image, 'imagen_desordenada_k.png', n)
+    if args.disorder: desordenaimagenite(A, sq_image, 'imagen_desordenada_k.png', n)
 
     # 2. Ordenar la imagen con el mismo k
-    ordenaimagenite(A, 'imagen_desordenada_k.png', 'imagen_ordenada.png', n)
+    if args.order: ordenaimagenite(A, 'imagen_desordenada_k.png', 'imagen_ordenada.png', n)
 
     # 3. Ver la evolución con diferentes valores de k
-    desordenaimagenproceso(A, sq_image, output_dir, n, max_k=5)
+    if args.process: desordenaimagenproceso(A, sq_image, output_dir, n, max_k=5)
