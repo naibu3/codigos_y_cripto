@@ -1,4 +1,5 @@
 from PIL import Image
+import argparse
 
 def text_to_bits(text):
     """Convierte un texto en su representación binaria (lista de bits)."""
@@ -75,16 +76,50 @@ def LSB_complex_decypher(image_path, msg_length, step):
     bits = ''.join(str(pixels[i * step] & 1) for i in range(msg_length))
     return bits_to_text(bits)
 
+# Argumentos
+
+
+# Crear el parser
+parser = argparse.ArgumentParser(description="Manjador de argumentos")
+
+# Agregar argumentos
+parser.add_argument('archivo', help="Ruta al archivo de entrada")
+#parser.add_argument('-v', '--verbose', action='store_true', help="Activar modo verbose")
+parser.add_argument('-e', '--encode', action='store_true', help="Opcion para codificar simple LSB")
+parser.add_argument('-d', '--decode', action='store_true', help="Opcion para decodificar simple LSB")
+parser.add_argument('-l', '--length', type=int, help="Longitud del mesaje en bytes", default=150)
+parser.add_argument('-c', '--complexity', type=int, help="Complejidad para la codificacion compleja", default=2)
+parser.add_argument('-m', '--mensaje', type=str, help="Mensaje a codificar", default="Hola a todos")
+parser.add_argument('-Ce', '--complex_encode', action='store_true', help="Opcion para codificar simple LSB")
+parser.add_argument('-Cd', '--complex_decode', action='store_true', help="Opcion para decodificar simple LSB")
+
+# Parsear los argumentos
+args = parser.parse_args()
+
+
 if __name__=="__main__":
 
-    bits = text_to_bits("Hola") # => '01001000011011110110110001100001'
-    print(f"Hola en bits {bits}")
-    print(f"Bits decodificados: {bits_to_text(bits)}\n")
+    #bits = text_to_bits("Hola") # => '01001000011011110110110001100001'
+    #print(f"Hola en bits {bits}")
+    #print(f"Bits decodificados: {bits_to_text(bits)}\n")
 
     #LSB simple
-    LSB_simple_cypher('imagen.jpg', 'Hola mundo', 'imagen_codificada.png')
-    print(f"Mensaje oculto: {LSB_simple_decypher('imagen_codificada.png', 150)}\n") # => "Hola mundo"
+    #LSB_simple_cypher('imagen.jpg', 'Hola mundo', 'imagen_codificada.png')
+    #print(f"Mensaje oculto: {LSB_simple_decypher('imagen_codificada.png', 150)}\n") # => "Hola mundo"
 
     #LSB complex
-    LSB_complex_cypher('imagen.jpg', 'Hola mundo', 'imagen_codificada_compleja.png', 2)
-    print(f"Mensaje oculto en imagen compleja: {LSB_complex_decypher('imagen_codificada_compleja.png', 150, 2)}") # => "Hola mundo"
+    #LSB_complex_cypher('imagen.jpg', 'Hola mundo', 'imagen_codificada_compleja.png', 2)
+    #print(f"Mensaje oculto en imagen compleja: {LSB_complex_decypher('imagen_codificada_compleja.png', 150, 2)}") # => "Hola mundo"
+
+
+    if args.encode:
+        LSB_simple_cypher(args.archivo, args.mensaje, 'imagen_codificada.png')
+
+    if args.decode:
+        print(f"Mensaje oculto: {LSB_simple_decypher(args.archivo, args.length)}\n")
+    
+    if args.complex_encode:
+        LSB_complex_cypher(args.archivo, args.mensaje, 'imagen_codificada_compleja.png', args.complexity)
+
+    if args.complex_decode:
+        print(f"Mensaje oculto: {LSB_simple_decypher(args.archivo, args.length)}\n")
